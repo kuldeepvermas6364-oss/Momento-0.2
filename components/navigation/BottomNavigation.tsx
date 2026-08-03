@@ -1,4 +1,4 @@
-import Link from "next/link";
+import NavItem from "./NavItem";
 
 export default function BottomNavigation() {
   return (
@@ -8,22 +8,17 @@ export default function BottomNavigation() {
         bottom: 0,
         left: 0,
         right: 0,
-        height: "64px",
-        background: "#FFFFFF",
-        borderTop: "1px solid #E5E7EB",
         display: "flex",
         justifyContent: "space-around",
-        alignItems: "center",
-        zIndex: 1000,
+        padding: "12px",
+        background: "#FFFFFF",
+        borderTop: "1px solid #E5E7EB",
       }}
     >
-      <Link href="/">🏠 Home</Link>
-
-      <Link href="/reels">🎬 Reels</Link>
-
-      <Link href="/chat">💬 Chat</Link>
-
-      <Link href="/profile">👤 Profile</Link>
+      <NavItem href="/" icon="🏠" label="Home" />
+      <NavItem href="/reels" icon="🎬" label="Reels" />
+      <NavItem href="/chat" icon="💬" label="Chat" />
+      <NavItem href="/profile" icon="👤" label="Profile" />
     </nav>
   );
 }
