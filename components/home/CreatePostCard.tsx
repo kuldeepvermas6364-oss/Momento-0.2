@@ -8,7 +8,7 @@ export default function CreatePostCard() {
         marginBottom: "20px",
       }}
     >
-      What's on your mind?
+      {"What's on your mind?"}
     </div>
   );
 }
