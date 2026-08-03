@@ -1,14 +1,12 @@
 import MainLayout from "@/components/layout/MainLayout";
 import HomeHeader from "@/components/home/HomeHeader";
-import HomeWelcome from "@/components/home/HomeWelcome";
+import StoriesBar from "@/components/home/StoriesBar";
 import CreatePostCard from "@/components/home/CreatePostCard";
 import HomeFeed from "@/components/home/HomeFeed";
 
 export default function HomePage() {
   return (
     <MainLayout>
-      <HomeHeader />
-
       <div
         style={{
           maxWidth: "700px",
@@ -16,7 +14,8 @@ export default function HomePage() {
           padding: "20px",
         }}
       >
-        <HomeWelcome />
+        <HomeHeader />
+        <StoriesBar />
         <CreatePostCard />
         <HomeFeed />
       </div>
