@@ -1,8 +1,11 @@
+import type { ReactNode } from "react";
+
 import Header from "./Header";
 import Footer from "./Footer";
+import BottomNavigation from "../navigation/BottomNavigation";
 
 type MainLayoutProps = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 export default function MainLayout({
@@ -11,7 +14,18 @@ export default function MainLayout({
   return (
     <>
       <Header title="Momento" />
-      <main>{children}</main>
+
+      <main
+        style={{
+          minHeight: "calc(100vh - 128px)",
+          paddingBottom: "80px",
+        }}
+      >
+        {children}
+      </main>
+
+      <BottomNavigation />
+
       <Footer />
     </>
   );
