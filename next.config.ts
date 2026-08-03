@@ -5,11 +5,7 @@ const nextConfig: NextConfig = {
 
   poweredByHeader: false,
 
-  compress: true,
-
-  experimental: {
-    typedRoutes: true
-  }
+  compress: true
 };
 
 export default nextConfig;
