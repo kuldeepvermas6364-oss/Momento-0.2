@@ -1,24 +1,22 @@
+import ProfileStats from "./ProfileStats";
+
 export default function ProfileHeader() {
   return (
-    <div
-      style={{
-        background: "#FFFFFF",
-        borderRadius: "16px",
-        padding: "24px",
-        border: "1px solid #E5E7EB",
-        marginBottom: "20px",
-      }}
-    >
-      <h2 style={{ margin: 0 }}>Kuldeep Verma</h2>
-
-      <p
+    <>
+      <div
         style={{
-          marginTop: "8px",
-          color: "#6B7280",
+          background: "#FFFFFF",
+          border: "1px solid #E5E7EB",
+          borderRadius: "16px",
+          padding: "24px",
         }}
       >
-        @kuldeep
-      </p>
-    </div>
+        <h2>Kuldeep Verma</h2>
+
+        <p>@kuldeep</p>
+
+        <ProfileStats />
+      </div>
+    </>
   );
 }
