@@ -70,7 +70,7 @@ export default function SignupForm() {
       <br />
       <br />
 
-      <Button text="Create Account" onClick={handleSubmit= disabled={loading} />
+      <Button text="Create Account" onClick={handleSubmit} disabled={loading} />
     </form>
   );
 }

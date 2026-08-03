@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type AvatarProps = {
   src?: string;
   size?: number;
@@ -8,7 +10,7 @@ export default function Avatar({
   size = 48,
 }: AvatarProps) {
   return (
-    <img
+    <Image
       src={src || "https://placehold.co/100x100"}
       alt="Avatar"
       width={size}
