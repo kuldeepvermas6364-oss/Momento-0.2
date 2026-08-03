@@ -1,4 +1,5 @@
 import NavItem from "./NavItem";
+import { Routes } from "@/constants/routes";
 
 export default function BottomNavigation() {
   return (
@@ -12,13 +13,13 @@ export default function BottomNavigation() {
         justifyContent: "space-around",
         padding: "12px",
         background: "#FFFFFF",
-        borderTop: "1px solid #E5E7EB",
+        borderTop: "1px solid #E5E7EB"
       }}
     >
-      <NavItem href="/" icon="🏠" label="Home" />
-      <NavItem href="/reels" icon="🎬" label="Reels" />
-      <NavItem href="/chat" icon="💬" label="Chat" />
-      <NavItem href="/profile" icon="👤" label="Profile" />
+      <NavItem href={Routes.HOME} icon="🏠" label="Home" />
+      <NavItem href={Routes.REELS} icon="🎬" label="Reels" />
+      <NavItem href={Routes.CHAT} icon="💬" label="Chat" />
+      <NavItem href={Routes.PROFILE} icon="👤" label="Profile" />
     </nav>
   );
 }

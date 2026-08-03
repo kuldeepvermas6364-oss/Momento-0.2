@@ -1,18 +1,16 @@
-import type { ReactNode } from "react";
+import { theme } from "@/lib/theme";
 
 type ScreenProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
-export default function Screen({
-  children,
-}: ScreenProps) {
+export default function Screen({ children }: ScreenProps) {
   return (
     <div
       style={{
         width: "100%",
         minHeight: "100vh",
-        background: "#F8FAFC",
+        background: theme.colors.background
       }}
     >
       {children}

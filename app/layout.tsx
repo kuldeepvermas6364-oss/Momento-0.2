@@ -1,19 +1,16 @@
 import "./globals.css";
 
-import type { Metadata } from "next";
+import { appMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Momento",
-  description: "Modern AI Powered Social Platform"
-};
+export const metadata = appMetadata;
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

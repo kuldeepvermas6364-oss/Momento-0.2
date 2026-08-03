@@ -9,7 +9,7 @@ type MainLayoutProps = {
 };
 
 export default function MainLayout({
-  children,
+  children
 }: MainLayoutProps) {
   return (
     <>
@@ -18,7 +18,7 @@ export default function MainLayout({
       <main
         style={{
           minHeight: "calc(100vh - 128px)",
-          paddingBottom: "80px",
+          paddingBottom: "140px"
         }}
       >
         {children}

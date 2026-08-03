@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/constants/app";
+
 export default function Footer() {
   return (
     <footer
@@ -6,10 +8,10 @@ export default function Footer() {
         textAlign: "center",
         borderTop: "1px solid #E5E7EB",
         color: "#6B7280",
-        fontSize: "14px",
+        fontSize: "14px"
       }}
     >
-      © 2026 Momento. All rights reserved.
+      © 2026 {APP_NAME}. All rights reserved.
     </footer>
   );
 }

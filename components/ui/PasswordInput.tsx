@@ -1,22 +1,25 @@
+import Input from "./Input";
+
 type PasswordInputProps = {
   placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
 };
 
 export default function PasswordInput({
   placeholder = "Password",
+  value,
+  onChange,
+  error
 }: PasswordInputProps) {
   return (
-    <input
+    <Input
       type="password"
       placeholder={placeholder}
-      style={{
-        width: "100%",
-        padding: "14px",
-        border: "1px solid #E5E7EB",
-        borderRadius: "12px",
-        fontSize: "16px",
-        outline: "none",
-      }}
+      value={value}
+      onChange={onChange}
+      error={error}
     />
   );
 }

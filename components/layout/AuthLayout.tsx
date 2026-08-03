@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
+import { theme } from "@/lib/theme";
 
 type AuthLayoutProps = {
   children: ReactNode;
 };
 
 export default function AuthLayout({
-  children,
+  children
 }: AuthLayoutProps) {
   return (
     <div
@@ -14,14 +15,14 @@ export default function AuthLayout({
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#F8FAFC",
-        padding: "24px",
+        backgroundColor: theme.colors.background,
+        padding: "24px"
       }}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: "420px",
+          maxWidth: "420px"
         }}
       >
         {children}

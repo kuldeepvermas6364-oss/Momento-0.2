@@ -1,4 +1,12 @@
+import { Colors } from "@/constants/colors";
+
 export default function ProfileStats() {
+  const stats = [
+    { label: "Posts", value: 0 },
+    { label: "Followers", value: 0 },
+    { label: "Following", value: 0 }
+  ];
+
   return (
     <div
       style={{
@@ -6,25 +14,17 @@ export default function ProfileStats() {
         justifyContent: "space-around",
         marginTop: "20px",
         padding: "16px",
-        background: "#FFFFFF",
+        background: Colors.background,
         borderRadius: "16px",
-        border: "1px solid #E5E7EB",
+        border: `1px solid ${Colors.border}`
       }}
     >
-      <div>
-        <strong>0</strong>
-        <p>Posts</p>
-      </div>
-
-      <div>
-        <strong>0</strong>
-        <p>Followers</p>
-      </div>
-
-      <div>
-        <strong>0</strong>
-        <p>Following</p>
-      </div>
+      {stats.map((stat) => (
+        <div key={stat.label} style={{ textAlign: "center" }}>
+          <strong>{stat.value}</strong>
+          <p>{stat.label}</p>
+        </div>
+      ))}
     </div>
   );
 }

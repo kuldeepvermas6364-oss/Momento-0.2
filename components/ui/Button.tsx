@@ -1,16 +1,21 @@
+import { Colors } from "@/constants/colors";
+
 type ButtonProps = {
   text: string;
-  onClick?: () => void;
+  onClick?: (e: React.FormEvent) => void;
   disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 };
 
 export default function Button({
   text,
   onClick,
   disabled = false,
+  type = "submit"
 }: ButtonProps) {
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -18,15 +23,15 @@ export default function Button({
         padding: "14px",
         borderRadius: "12px",
         border: "none",
-        background: "#6366F1",
+        background: Colors.primary,
         color: "#FFFFFF",
         fontSize: "16px",
         fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.6 : 1,
+        opacity: disabled ? 0.6 : 1
       }}
     >
-      {text}
+      {disabled ? "Please wait..." : text}
     </button>
   );
 }

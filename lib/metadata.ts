@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
+import { APP_NAME, APP_DESCRIPTION } from "@/constants/app";
 
 export const appMetadata: Metadata = {
   title: {
-    default: "Momento",
-    template: "%s | Momento",
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`
   },
-  description:
-    "Momento - Modern AI Powered Social Platform",
-  applicationName: "Momento",
+  description: `${APP_NAME} - ${APP_DESCRIPTION}`,
+  applicationName: APP_NAME,
   keywords: [
-    "Momento",
+    APP_NAME,
     "Social Media",
     "AI",
     "Community",

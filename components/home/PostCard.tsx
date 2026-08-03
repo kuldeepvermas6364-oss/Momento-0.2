@@ -1,37 +1,55 @@
+import { Colors } from "@/constants/colors";
+import { formatDate } from "@/utils/date";
+
 type PostCardProps = {
   username: string;
   caption: string;
+  createdAt?: Date;
 };
 
 export default function PostCard({
   username,
   caption,
+  createdAt
 }: PostCardProps) {
   return (
     <article
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E5E7EB",
+        background: Colors.background,
+        border: `1px solid ${Colors.border}`,
         borderRadius: "16px",
         padding: "16px",
-        marginBottom: "16px",
+        marginBottom: "16px"
       }}
     >
-      <h3
+      <div
         style={{
-          margin: 0,
-          fontSize: "16px",
-          color: "#111827",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
         }}
       >
-        @{username}
-      </h3>
+        <h3
+          style={{
+            margin: 0,
+            fontSize: "16px",
+            color: Colors.text
+          }}
+        >
+          @{username}
+        </h3>
+        {createdAt && (
+          <small style={{ color: Colors.textSecondary, fontSize: "13px" }}>
+            {formatDate(createdAt)}
+          </small>
+        )}
+      </div>
 
       <p
         style={{
           marginTop: "12px",
           color: "#374151",
-          lineHeight: 1.6,
+          lineHeight: 1.6
         }}
       >
         {caption}
@@ -42,8 +60,8 @@ export default function PostCard({
           display: "flex",
           gap: "20px",
           marginTop: "16px",
-          color: "#6B7280",
-          fontSize: "14px",
+          color: Colors.textSecondary,
+          fontSize: "14px"
         }}
       >
         <span>❤️ Like</span>

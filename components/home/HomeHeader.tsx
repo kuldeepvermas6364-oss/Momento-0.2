@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/constants/app";
+
 export default function HomeHeader() {
   return (
     <header
@@ -7,7 +9,7 @@ export default function HomeHeader() {
         borderBottom: "1px solid #E5E7EB"
       }}
     >
-      <h2>Momento</h2>
+      <h2>{APP_NAME}</h2>
     </header>
   );
 }
