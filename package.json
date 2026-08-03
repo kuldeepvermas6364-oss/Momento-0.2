@@ -1,0 +1,17 @@
+{
+  "name": "momento",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Momento - Modern AI Powered Social Platform",
+  "author": "Momento Team",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
