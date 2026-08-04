@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import { isValidEmail, isValidPassword } from "@/utils/validators";
 import { signUpWithEmail } from "@/lib/auth";
 
 export default function SignupForm() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +19,6 @@ export default function SignupForm() {
   }>({});
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
 
   function validate() {
     const next: typeof errors = {};
@@ -45,34 +46,9 @@ export default function SignupForm() {
       return;
     }
 
-    setLoading(false);
-    setEmailSent(true);
-  }
-
-  if (emailSent) {
-    return (
-      <div style={{ textAlign: "center" }}>
-        <p
-          style={{
-            color: "#22C55E",
-            fontSize: "15px",
-            marginBottom: "12px",
-          }}
-        >
-          Account created successfully!
-        </p>
-        <p style={{ color: "#6B7280", fontSize: "14px" }}>
-          Please check your email to verify your account, then{" "}
-          <a
-            href="/login"
-            style={{ color: "#6366F1", textDecoration: "underline" }}
-          >
-            log in
-          </a>
-          .
-        </p>
-      </div>
-    );
+    // Firebase auto-signs in on signup — redirect to home
+    router.push("/");
+    router.refresh();
   }
 
   return (

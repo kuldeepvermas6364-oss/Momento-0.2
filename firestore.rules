@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // PROFILES — public read, owner write
+    // ============================================================
+    match /profiles/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ============================================================
+    // POSTS — public read, auth user create, owner edit/delete
+    // ============================================================
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.author_id == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.author_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.author_id == request.auth.uid;
+
+      // COMMENTS — public read, auth user create, owner delete
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.author_id == request.auth.uid;
+        allow delete: if request.auth != null
+          && resource.data.author_id == request.auth.uid;
+      }
+
+      // LIKES — public read, auth user create/delete own
+      match /likes/{likeId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.user_id == request.auth.uid;
+        allow delete: if request.auth != null
+          && resource.data.user_id == request.auth.uid;
+      }
+    }
+
+    // ============================================================
+    // SAVED_POSTS — owner only
+    // ============================================================
+    match /saved_posts/{savedId} {
+      allow read: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    // ============================================================
+    // FOLLOWS — public read, auth user create/delete own
+    // ============================================================
+    match /follows/{followId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.follower_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.follower_id == request.auth.uid;
+    }
+
+    // ============================================================
+    // STORIES — public read, auth user create, owner delete
+    // ============================================================
+    match /stories/{storyId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.author_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.author_id == request.auth.uid;
+
+      // STORY VIEWS
+      match /views/{viewId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.user_id == request.auth.uid;
+      }
+    }
+
+    // ============================================================
+    // NOTIFICATIONS — owner only
+    // ============================================================
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    // ============================================================
+    // MESSAGES — sender or receiver only
+    // ============================================================
+    match /messages/{messageId} {
+      allow read: if request.auth != null
+        && (resource.data.sender_id == request.auth.uid
+          || resource.data.receiver_id == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.sender_id == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.receiver_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && (resource.data.sender_id == request.auth.uid
+          || resource.data.receiver_id == request.auth.uid);
+    }
+
+    // ============================================================
+    // REELS — public read, auth user create, owner delete
+    // ============================================================
+    match /reels/{reelId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.author_id == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.author_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.author_id == request.auth.uid;
+    }
+
+    // ============================================================
+    // HASHTAGS — public read, auth user create
+    // ============================================================
+    match /hashtags/{hashtagId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+  }
+}

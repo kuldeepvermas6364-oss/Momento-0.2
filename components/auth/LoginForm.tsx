@@ -40,7 +40,6 @@ export default function LoginForm() {
       return;
     }
 
-    // Redirect to home on successful login
     router.push("/");
     router.refresh();
   }
