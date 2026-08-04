@@ -156,7 +156,16 @@ export async function getPosts(
   );
 
   const snap = await get(postsQuery);
-  const allPosts: Array<{ id: string; author_id: string; caption: string; image_url: string | null; video_url: string | null; likes_count: number; comments_count: number; created_at: string }> = [];
+  const allPosts: Array<{
+    id: string;
+    author_id: string;
+    caption: string;
+    image_url: string | null;
+    video_url: string | null;
+    likes_count: number;
+    comments_count: number;
+    created_at: string;
+  }> = [];
 
   if (!snap.exists()) {
     return { posts: [], hasMore: false };
@@ -226,7 +235,9 @@ export async function getUserPosts(
   if (!snap.exists()) return [];
 
   const postIds: string[] = [];
-  snap.forEach((child) => postIds.push(child.key!));
+  snap.forEach((child) => {
+    postIds.push(child.key!);
+  });
 
   const posts: Post[] = [];
   for (const postId of postIds) {
