@@ -1,27 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useAuthContext } from "@/context/AuthContext";
 
-type AuthUser = {
-  id: string;
-  username: string;
-  name: string;
-  avatar: string;
-} | null;
-
+/**
+ * useAuth - thin wrapper around AuthContext.
+ * Components should use this hook to access the current user/session.
+ */
 export default function useAuth() {
-  const [user, setUser] = useState<AuthUser>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: check Supabase / localStorage session
-    setUser(null);
-    setLoading(false);
-  }, []);
+  const { user, profile, session, loading, signOut, refreshProfile } =
+    useAuthContext();
 
   return {
     user,
+    profile,
+    session,
     loading,
-    authenticated: user !== null
+    authenticated: user !== null,
+    signOut,
+    refreshProfile,
   };
 }

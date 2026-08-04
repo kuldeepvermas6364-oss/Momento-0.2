@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import { isValidEmail, isValidPassword } from "@/utils/validators";
+import { signInWithEmail } from "@/lib/auth";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   function validate() {
     const next: typeof errors = {};
@@ -24,10 +28,21 @@ export default function LoginForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     if (!validate()) return;
     setLoading(true);
-    // TODO: connect to backend / Supabase auth
-    setTimeout(() => setLoading(false), 1000);
+
+    const { error } = await signInWithEmail(email, password);
+
+    if (error) {
+      setAuthError(error);
+      setLoading(false);
+      return;
+    }
+
+    // Redirect to home on successful login
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -50,6 +65,24 @@ export default function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
         error={errors.password}
       />
+
+      {authError && (
+        <>
+          <br />
+          <p
+            style={{
+              color: "#EF4444",
+              fontSize: "14px",
+              textAlign: "center",
+              padding: "8px 12px",
+              background: "#FEF2F2",
+              borderRadius: "8px",
+            }}
+          >
+            {authError}
+          </p>
+        </>
+      )}
 
       <br />
       <br />

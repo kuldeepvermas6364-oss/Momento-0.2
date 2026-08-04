@@ -4,6 +4,7 @@ import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import { isValidEmail, isValidPassword } from "@/utils/validators";
+import { signUpWithEmail } from "@/lib/auth";
 
 export default function SignupForm() {
   const [name, setName] = useState("");
@@ -15,6 +16,8 @@ export default function SignupForm() {
     password?: string;
   }>({});
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   function validate() {
     const next: typeof errors = {};
@@ -30,10 +33,46 @@ export default function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     if (!validate()) return;
     setLoading(true);
-    // TODO: connect to backend / Supabase auth
-    setTimeout(() => setLoading(false), 1000);
+
+    const { error } = await signUpWithEmail(name, email, password);
+
+    if (error) {
+      setAuthError(error);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setEmailSent(true);
+  }
+
+  if (emailSent) {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <p
+          style={{
+            color: "#22C55E",
+            fontSize: "15px",
+            marginBottom: "12px",
+          }}
+        >
+          Account created successfully!
+        </p>
+        <p style={{ color: "#6B7280", fontSize: "14px" }}>
+          Please check your email to verify your account, then{" "}
+          <a
+            href="/login"
+            style={{ color: "#6366F1", textDecoration: "underline" }}
+          >
+            log in
+          </a>
+          .
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -66,6 +105,24 @@ export default function SignupForm() {
         onChange={(e) => setPassword(e.target.value)}
         error={errors.password}
       />
+
+      {authError && (
+        <>
+          <br />
+          <p
+            style={{
+              color: "#EF4444",
+              fontSize: "14px",
+              textAlign: "center",
+              padding: "8px 12px",
+              background: "#FEF2F2",
+              borderRadius: "8px",
+            }}
+          >
+            {authError}
+          </p>
+        </>
+      )}
 
       <br />
       <br />
