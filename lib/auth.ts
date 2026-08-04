@@ -7,7 +7,7 @@ import {
   signOut as firebaseSignOut,
   updateProfile,
 } from "firebase/auth";
-import { ref, set, serverTimestamp } from "firebase/database";
+import { ref, set } from "firebase/database";
 import { auth, rtdb } from "@/lib/firebase/client";
 import type { Profile } from "@/types/user";
 
@@ -23,12 +23,10 @@ export async function signUpWithEmail(
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    // Set display name on the auth user
     await updateProfile(cred.user, { displayName: name });
 
-    // Create profile in Realtime Database
     const username = generateUsername(name);
-    const newProfile: Omit<Profile, "id"> = {
+    const newProfile = {
       username,
       name,
       avatar_url: cred.user.photoURL || null,
@@ -38,8 +36,8 @@ export async function signUpWithEmail(
       followers_count: 0,
       following_count: 0,
       posts_count: 0,
-      created_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
+      created_at: Date.now(),
+      updated_at: Date.now(),
     };
 
     await set(ref(rtdb, `profiles/${cred.user.uid}`), newProfile);
@@ -89,9 +87,6 @@ export async function signOut(): Promise<void> {
   await firebaseSignOut(auth);
 }
 
-/**
- * Generate a unique username from display name.
- */
 function generateUsername(name: string): string {
   const base = name
     .toLowerCase()
@@ -101,9 +96,6 @@ function generateUsername(name: string): string {
   return `${base}${random}`;
 }
 
-/**
- * Map Firebase error codes to user-friendly messages.
- */
 function getAuthErrorMessage(message: string): string {
   if (message.includes("auth/invalid-credential") || message.includes("auth/wrong-password")) {
     return "Invalid email or password. Please try again.";

@@ -65,7 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (fbUser) {
         let p = await fetchProfile(fbUser.uid);
 
-        // If profile doesn't exist, create one
         if (!p) {
           const displayName =
             fbUser.displayName ||
@@ -81,8 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             followers_count: 0,
             following_count: 0,
             posts_count: 0,
-            created_at: serverTimestamp(),
-            updated_at: serverTimestamp(),
+            created_at: Date.now(),
+            updated_at: Date.now(),
           };
           await set(ref(rtdb, `profiles/${fbUser.uid}`), newProfile);
           p = { id: fbUser.uid, ...newProfile } as Profile;
