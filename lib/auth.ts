@@ -1,54 +1,54 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut as firebaseSignOut,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase/client";
+import type { Profile } from "@/types/user";
 
 /**
  * Sign up a new user with email + password.
- * Creates the auth user and inserts a profile row.
+ * Creates the auth user and a Firestore profile document.
  */
 export async function signUpWithEmail(
   name: string,
   email: string,
   password: string
 ): Promise<{ error: string | null }> {
-  const supabase = createClient();
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: name },
-      emailRedirectTo: `${SITE_URL}/auth/callback`,
-    },
-  });
+    // Set display name on the auth user
+    await updateProfile(cred.user, { displayName: name });
 
-  if (error) {
-    return { error: error.message };
-  }
-
-  // If email confirmation is disabled, create profile immediately
-  if (data.user && data.session) {
+    // Create profile document in Firestore
     const username = generateUsername(name);
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: data.user.id,
+    const newProfile: Omit<Profile, "id"> = {
       username,
       name,
-      avatar_url: null,
+      avatar_url: cred.user.photoURL || null,
       bio: null,
       verified: false,
       website: null,
-    });
+      followers_count: 0,
+      following_count: 0,
+      posts_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    if (profileError) {
-      console.error("Profile creation error:", profileError.message);
-      return { error: "Account created but profile setup failed. Please try logging in." };
-    }
+    await setDoc(doc(db, "profiles", cred.user.uid), newProfile);
+
+    return { error: null };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Signup failed";
+    return { error: getAuthErrorMessage(message) };
   }
-
-  return { error: null };
 }
 
 /**
@@ -58,18 +58,13 @@ export async function signInWithEmail(
   email: string,
   password: string
 ): Promise<{ error: string | null }> {
-  const supabase = createClient();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message };
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    return { error: null };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Login failed";
+    return { error: getAuthErrorMessage(message) };
   }
-
-  return { error: null };
 }
 
 /**
@@ -78,25 +73,20 @@ export async function signInWithEmail(
 export async function resetPassword(
   email: string
 ): Promise<{ error: string | null }> {
-  const supabase = createClient();
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${SITE_URL}/auth/callback?next=/reset-password`,
-  });
-
-  if (error) {
-    return { error: error.message };
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return { error: null };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Reset failed";
+    return { error: getAuthErrorMessage(message) };
   }
-
-  return { error: null };
 }
 
 /**
  * Sign out the current user.
  */
 export async function signOut(): Promise<void> {
-  const supabase = createClient();
-  await supabase.auth.signOut();
+  await firebaseSignOut(auth);
 }
 
 /**
@@ -109,4 +99,32 @@ function generateUsername(name: string): string {
     .replace(/[^a-z0-9]/g, "");
   const random = Math.floor(Math.random() * 10000);
   return `${base}${random}`;
+}
+
+/**
+ * Map Firebase error codes to user-friendly messages.
+ */
+function getAuthErrorMessage(message: string): string {
+  if (message.includes("auth/invalid-credential") || message.includes("auth/wrong-password")) {
+    return "Invalid email or password. Please try again.";
+  }
+  if (message.includes("auth/user-not-found")) {
+    return "No account found with this email.";
+  }
+  if (message.includes("auth/email-already-in-use")) {
+    return "An account with this email already exists.";
+  }
+  if (message.includes("auth/weak-password")) {
+    return "Password should be at least 6 characters.";
+  }
+  if (message.includes("auth/invalid-email")) {
+    return "Please enter a valid email address.";
+  }
+  if (message.includes("auth/too-many-requests")) {
+    return "Too many attempts. Please try again later.";
+  }
+  if (message.includes("auth/network-request-failed")) {
+    return "Network error. Check your connection and try again.";
+  }
+  return message.replace("Firebase: ", "").replace("\n", " ");
 }

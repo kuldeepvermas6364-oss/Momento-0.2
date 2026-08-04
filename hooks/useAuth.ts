@@ -7,13 +7,13 @@ import { useAuthContext } from "@/context/AuthContext";
  * Components should use this hook to access the current user/session.
  */
 export default function useAuth() {
-  const { user, profile, session, loading, signOut, refreshProfile } =
+  const { user, profile, firebaseUser, loading, signOut, refreshProfile } =
     useAuthContext();
 
   return {
     user,
     profile,
-    session,
+    firebaseUser,
     loading,
     authenticated: user !== null,
     signOut,

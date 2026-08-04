@@ -8,15 +8,20 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import {
+  onAuthStateChanged,
+  signOut as firebaseSignOut,
+  type User as FirebaseUser,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase/client";
 import type { Profile } from "@/types/user";
 import { profileToUser, type User } from "@/types/user";
 
 type AuthContextValue = {
   user: User | null;
   profile: Profile | null;
-  session: Session | null;
+  firebaseUser: FirebaseUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -25,65 +30,63 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   profile: null,
-  session: null,
+  firebaseUser: null,
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabase = createClient();
-  const [session, setSession] = useState<Session | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(
-    async (userId: string) => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching profile:", error.message);
-        return null;
-      }
-      return data as Profile;
-    },
-    [supabase]
-  );
+  const fetchProfile = useCallback(async (uid: string) => {
+    const ref = doc(db, "profiles", uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      return { id: snap.id, ...snap.data() } as Profile;
+    }
+    return null;
+  }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!session?.user?.id) return;
-    const p = await fetchProfile(session.user.id);
+    if (!firebaseUser?.uid) return;
+    const p = await fetchProfile(firebaseUser.uid);
     setProfile(p);
-  }, [session, fetchProfile]);
+  }, [firebaseUser, fetchProfile]);
 
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (!mounted) return;
-      setSession(session);
+      setFirebaseUser(fbUser);
 
-      if (session?.user?.id) {
-        const p = await fetchProfile(session.user.id);
-        if (mounted) setProfile(p);
-      }
-      if (mounted) setLoading(false);
-    });
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!mounted) return;
-      setSession(newSession);
-
-      if (newSession?.user?.id) {
-        const p = await fetchProfile(newSession.user.id);
+      if (fbUser) {
+        // Try to fetch profile; if missing, create one
+        let p = await fetchProfile(fbUser.uid);
+        if (!p) {
+          const displayName =
+            fbUser.displayName ||
+            (fbUser.email ? fbUser.email.split("@")[0] : "user");
+          const username = generateUsername(displayName);
+          const newProfile: Omit<Profile, "id"> = {
+            username,
+            name: displayName,
+            avatar_url: fbUser.photoURL || null,
+            bio: null,
+            verified: false,
+            website: null,
+            followers_count: 0,
+            following_count: 0,
+            posts_count: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          await setDoc(doc(db, "profiles", fbUser.uid), newProfile);
+          p = { id: fbUser.uid, ...newProfile } as Profile;
+        }
         if (mounted) setProfile(p);
       } else {
         if (mounted) setProfile(null);
@@ -93,21 +96,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      unsubscribe();
     };
-  }, [supabase, fetchProfile]);
+  }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setSession(null);
+    await firebaseSignOut(auth);
+    setFirebaseUser(null);
     setProfile(null);
-  }, [supabase]);
+  }, []);
 
   const user = profile ? profileToUser(profile) : null;
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, session, loading, signOut, refreshProfile }}
+      value={{ user, profile, firebaseUser, loading, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
@@ -116,4 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuthContext() {
   return useContext(AuthContext);
+}
+
+function generateUsername(name: string): string {
+  const base = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]/g, "");
+  const random = Math.floor(Math.random() * 10000);
+  return `${base}${random}`;
 }
