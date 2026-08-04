@@ -1,6 +1,14 @@
-# Design assets
+# Assets
 
-Place icons, fonts, images, and other design assets here.
+Static project assets (SVGs, icons, fonts source files).
 
-This folder is tracked by Git. Binary assets (PNG, SVG, font files)
-are committed directly.
+## Structure
+
+- `/assets/icons/` - SVG icon source files
+- `/assets/images/` - Static images used in code
+- `/assets/fonts/` - Font source files
+
+## Notes
+
+For runtime-served static assets, use `/public/` instead.
+This folder is for source assets that are imported in code.
