@@ -188,7 +188,7 @@ export default function SignupForm() {
             }}
           />
           <span>
-            I agree to Momento's{" "}
+            I agree to the Momento{" "}
             <span style={{ color: "#a78bfa", fontWeight: 500 }}>
               Terms of Service
             </span>{" "}
