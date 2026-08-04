@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useAuthContext } from "@/context/AuthContext";
-import { createPost } from "@/lib/posts";
+import { createPost } from "@/lib/rtdb";
 
 export default function CreatePostCard() {
   const { user } = useAuthContext();
@@ -132,7 +132,7 @@ export default function CreatePostCard() {
 
       {imageUrl && (
         <div style={{ marginTop: "12px", position: "relative" }}>
-          // eslint-disable-next-line @next/next/no-img-element
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt="Preview"

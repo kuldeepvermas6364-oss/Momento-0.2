@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import AuthGuard from "@/components/common/AuthGuard";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuthContext } from "@/context/AuthContext";
-import { getUserPosts } from "@/lib/posts";
+import { getUserPosts, getSavedPosts } from "@/lib/rtdb";
 import type { Post } from "@/types/post";
 import PostCard from "@/components/home/PostCard";
 
@@ -19,38 +19,35 @@ export default function ProfilePage() {
 function ProfileContent() {
   const { user, profile } = useAuthContext();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    getUserPosts(user.id, user.id)
-      .then(setPosts)
-      .catch((err) => console.error("Error loading posts:", err))
+    Promise.all([
+      getUserPosts(user.id, user.id),
+      getSavedPosts(user.id),
+    ])
+      .then(([p, s]) => {
+        setPosts(p);
+        setSavedPosts(s);
+      })
+      .catch((err) => console.error("Error loading profile:", err))
       .finally(() => setLoading(false));
   }, [user]);
 
   if (!user) return null;
 
+  const displayedPosts = activeTab === "posts" ? posts : savedPosts;
+
   return (
     <MainLayout>
-      <div
-        style={{
-          maxWidth: "700px",
-          margin: "0 auto",
-          padding: "20px",
-        }}
-      >
-        {/* Profile Header */}
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "24px",
-          }}
-        >
+      <div style={{ maxWidth: "700px", margin: "0 auto", padding: "20px" }}>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
           {user.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={user.avatar}
               alt={user.name}
@@ -82,22 +79,10 @@ function ProfileContent() {
             </div>
           )}
 
-          <h2
-            style={{
-              fontSize: "22px",
-              fontWeight: 700,
-              margin: "0 0 4px",
-            }}
-          >
+          <h2 style={{ fontSize: "22px", fontWeight: 700, margin: "0 0 4px" }}>
             {user.name}
           </h2>
-          <p
-            style={{
-              color: "#6B7280",
-              fontSize: "14px",
-              margin: "0 0 12px",
-            }}
-          >
+          <p style={{ color: "#6B7280", fontSize: "14px", margin: "0 0 12px" }}>
             @{user.username}
           </p>
 
@@ -115,7 +100,6 @@ function ProfileContent() {
           )}
         </div>
 
-        {/* Stats */}
         <div
           style={{
             display: "flex",
@@ -128,78 +112,26 @@ function ProfileContent() {
           }}
         >
           <div style={{ textAlign: "center" }}>
-            <p
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                margin: 0,
-                color: "#111827",
-              }}
-            >
+            <p style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "#111827" }}>
               {posts.length}
             </p>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#6B7280",
-                margin: "2px 0 0",
-              }}
-            >
-              Posts
-            </p>
+            <p style={{ fontSize: "12px", color: "#6B7280", margin: "2px 0 0" }}>Posts</p>
           </div>
           <div style={{ textAlign: "center" }}>
-            <p
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                margin: 0,
-                color: "#111827",
-              }}
-            >
+            <p style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "#111827" }}>
               {profile?.followers_count || 0}
             </p>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#6B7280",
-                margin: "2px 0 0",
-              }}
-            >
-              Followers
-            </p>
+            <p style={{ fontSize: "12px", color: "#6B7280", margin: "2px 0 0" }}>Followers</p>
           </div>
           <div style={{ textAlign: "center" }}>
-            <p
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                margin: 0,
-                color: "#111827",
-              }}
-            >
+            <p style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "#111827" }}>
               {profile?.following_count || 0}
             </p>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#6B7280",
-                margin: "2px 0 0",
-              }}
-            >
-              Following
-            </p>
+            <p style={{ fontSize: "12px", color: "#6B7280", margin: "2px 0 0" }}>Following</p>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            marginBottom: "16px",
-          }}
-        >
+        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
           <button
             onClick={() => setActiveTab("posts")}
             style={{
@@ -234,30 +166,21 @@ function ProfileContent() {
           </button>
         </div>
 
-        {/* Posts */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px" }}>
             <p style={{ color: "#6B7280", fontSize: "14px" }}>Loading...</p>
           </div>
-        ) : posts.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px 20px",
-            }}
-          >
-            <p
-              style={{
-                color: "#6B7280",
-                fontSize: "14px",
-              }}
-            >
-              No posts yet. Share your first moment!
+        ) : displayedPosts.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <p style={{ color: "#6B7280", fontSize: "14px" }}>
+              {activeTab === "posts"
+                ? "No posts yet. Share your first moment!"
+                : "No saved posts yet."}
             </p>
           </div>
         ) : (
           <div>
-            {posts.map((post) => (
+            {displayedPosts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Post } from "@/types/post";
-import { toggleLike, toggleSave } from "@/lib/posts";
+import { toggleLike, toggleSave } from "@/lib/rtdb";
 import { useAuthContext } from "@/context/AuthContext";
 import { formatRelativeTime } from "@/utils/date";
 
@@ -23,7 +23,6 @@ export default function PostCard({ post, onComment }: PostCardProps) {
     if (!user || likeLoading) return;
     setLikeLoading(true);
 
-    // Optimistic update
     const newLiked = !liked;
     setLiked(newLiked);
     setLikesCount((prev) => prev + (newLiked ? 1 : -1));
@@ -31,7 +30,6 @@ export default function PostCard({ post, onComment }: PostCardProps) {
     try {
       await toggleLike(post.id, user.id);
     } catch {
-      // Revert on error
       setLiked(!newLiked);
       setLikesCount((prev) => prev + (newLiked ? -1 : 1));
     } finally {
@@ -77,7 +75,6 @@ export default function PostCard({ post, onComment }: PostCardProps) {
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -87,7 +84,7 @@ export default function PostCard({ post, onComment }: PostCardProps) {
         }}
       >
         {post.author.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={post.author.avatar}
             alt={post.author.name}
@@ -115,13 +112,7 @@ export default function PostCard({ post, onComment }: PostCardProps) {
         )}
 
         <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <span style={{ fontWeight: 600, fontSize: "14px" }}>
               {post.author.name}
             </span>
@@ -137,7 +128,6 @@ export default function PostCard({ post, onComment }: PostCardProps) {
         </div>
       </div>
 
-      {/* Caption */}
       {post.caption && (
         <p
           style={{
@@ -152,9 +142,8 @@ export default function PostCard({ post, onComment }: PostCardProps) {
         </p>
       )}
 
-      {/* Media */}
       {post.image && (
-        // eslint-disable-next-line @next/next/no-img-element
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={post.image}
           alt={post.caption || "Post"}
@@ -166,7 +155,6 @@ export default function PostCard({ post, onComment }: PostCardProps) {
         />
       )}
 
-      {/* Actions */}
       <div
         style={{
           display: "flex",

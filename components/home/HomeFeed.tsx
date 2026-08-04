@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { Post } from "@/types/post";
-import { getPosts } from "@/lib/posts";
+import { getPosts } from "@/lib/rtdb";
 import { useAuthContext } from "@/context/AuthContext";
 import PostCard from "./PostCard";
 import EmptyFeed from "./EmptyFeed";
