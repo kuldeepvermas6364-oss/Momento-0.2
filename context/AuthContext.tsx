@@ -13,7 +13,7 @@ import {
   signOut as firebaseSignOut,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { ref, get, set, serverTimestamp } from "firebase/database";
+import { ref, get, set } from "firebase/database";
 import { auth, rtdb } from "@/lib/firebase/client";
 import type { Profile } from "@/types/user";
 import { profileToUser, type User } from "@/types/user";
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fbUser.displayName ||
             (fbUser.email ? fbUser.email.split("@")[0] : "user");
           const username = generateUsername(displayName);
+          const now = new Date().toISOString();
           const newProfile = {
             username,
             name: displayName,
@@ -80,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             followers_count: 0,
             following_count: 0,
             posts_count: 0,
-            created_at: Date.now(),
-            updated_at: Date.now(),
+            created_at: now,
+            updated_at: now,
           };
           await set(ref(rtdb, `profiles/${fbUser.uid}`), newProfile);
           p = { id: fbUser.uid, ...newProfile } as Profile;

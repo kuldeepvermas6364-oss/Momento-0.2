@@ -26,6 +26,7 @@ export async function signUpWithEmail(
     await updateProfile(cred.user, { displayName: name });
 
     const username = generateUsername(name);
+    const now = new Date().toISOString();
     const newProfile = {
       username,
       name,
@@ -36,8 +37,8 @@ export async function signUpWithEmail(
       followers_count: 0,
       following_count: 0,
       posts_count: 0,
-      created_at: Date.now(),
-      updated_at: Date.now(),
+      created_at: now,
+      updated_at: now,
     };
 
     await set(ref(rtdb, `profiles/${cred.user.uid}`), newProfile);
