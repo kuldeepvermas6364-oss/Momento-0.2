@@ -8,10 +8,13 @@
  * the same concern in React Context.
  */
 
-// Base store creator will be added as features are implemented.
-// Example exports:
-// export { useAuthStore } from "@/features/auth/store/authStore";
-// export { useFeedStore } from "@/features/feed/store/feedStore";
-// export { useChatStore } from "@/features/chat/store/chatStore";
+// Import Zustand create when stores are implemented:
+// import { create } from "zustand";
+
+// Example store pattern:
+// export const useAuthStore = create<AuthStore>((set) => ({
+//   user: null,
+//   setUser: (user) => set({ user }),
+// }));
 
 export {};
