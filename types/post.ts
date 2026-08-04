@@ -39,3 +39,22 @@ export interface Notification {
   read: boolean;
   createdAt: string;
 }
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  imageUrl?: string;
+  read: boolean;
+  createdAt: string | number;
+}
+
+export interface Conversation {
+  id: string;
+  otherUserId: string;
+  otherUserName: string;
+  lastMessage: string;
+  lastMessageAt: string | number;
+}
