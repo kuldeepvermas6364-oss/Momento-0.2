@@ -1,0 +1,121 @@
+{
+  "rules": {
+    // Profiles — public read, owner write
+    "profiles": {
+      "$uid": {
+        ".read": "true",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    // Posts — public read, auth user create, owner edit/delete
+    "posts": {
+      "$postId": {
+        ".read": "true",
+        ".write": "auth != null && (!data.exists() || data.child('author_id').val() === auth.uid)",
+
+        // Comments — public read, auth user create, owner delete
+        "comments": {
+          "$commentId": {
+            ".read": "true",
+            ".write": "auth != null && (!data.exists() || data.child('author_id').val() === auth.uid)"
+          }
+        },
+
+        // Likes — public read, auth user can like/unlike own
+        "likes": {
+          "$uid": {
+            ".read": "true",
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    },
+
+    // User posts index — owner read/write
+    "userPosts": {
+      "$uid": {
+        ".read": "true",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    // Saved posts — owner only
+    "saved_posts": {
+      "$saveId": {
+        ".read": "auth != null && data.child('user_id').val() === auth.uid",
+        ".write": "auth != null && (!data.exists() || data.child('user_id').val() === auth.uid)"
+      }
+    },
+
+    // Follows — public read, auth user create/delete own
+    "follows": {
+      "$followId": {
+        ".read": "true",
+        ".write": "auth != null && (!data.exists() || data.child('follower_id').val() === auth.uid)"
+      }
+    },
+
+    // Conversations — participants only
+    "conversations": {
+      "$convoId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        }
+      }
+    },
+
+    // User conversations index — owner only
+    "userConversations": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    // Stories — public read, auth user create, owner delete
+    "stories": {
+      "$storyId": {
+        ".read": "true",
+        ".write": "auth != null && (!data.exists() || data.child('author_id').val() === auth.uid)",
+
+        "views": {
+          "$uid": {
+            ".read": "true",
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    },
+
+    // Notifications — owner only
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    // Reels — public read, auth user create, owner delete
+    "reels": {
+      "$reelId": {
+        ".read": "true",
+        ".write": "auth != null && (!data.exists() || data.child('author_id').val() === auth.uid)"
+      }
+    },
+
+    // Hashtags — public read, auth user create
+    "hashtags": {
+      "$tag": {
+        ".read": "true",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

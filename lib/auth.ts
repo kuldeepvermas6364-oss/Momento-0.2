@@ -7,13 +7,13 @@ import {
   signOut as firebaseSignOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase/client";
+import { ref, set, serverTimestamp } from "firebase/database";
+import { auth, rtdb } from "@/lib/firebase/client";
 import type { Profile } from "@/types/user";
 
 /**
  * Sign up a new user with email + password.
- * Creates the auth user and a Firestore profile document.
+ * Creates the auth user and a profile entry in Realtime Database.
  */
 export async function signUpWithEmail(
   name: string,
@@ -26,7 +26,7 @@ export async function signUpWithEmail(
     // Set display name on the auth user
     await updateProfile(cred.user, { displayName: name });
 
-    // Create profile document in Firestore
+    // Create profile in Realtime Database
     const username = generateUsername(name);
     const newProfile: Omit<Profile, "id"> = {
       username,
@@ -38,11 +38,11 @@ export async function signUpWithEmail(
       followers_count: 0,
       following_count: 0,
       posts_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
     };
 
-    await setDoc(doc(db, "profiles", cred.user.uid), newProfile);
+    await set(ref(rtdb, `profiles/${cred.user.uid}`), newProfile);
 
     return { error: null };
   } catch (err: unknown) {

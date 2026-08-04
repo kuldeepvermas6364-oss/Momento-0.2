@@ -13,8 +13,8 @@ import {
   signOut as firebaseSignOut,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase/client";
+import { ref, get, set, serverTimestamp } from "firebase/database";
+import { auth, rtdb } from "@/lib/firebase/client";
 import type { Profile } from "@/types/user";
 import { profileToUser, type User } from "@/types/user";
 
@@ -42,10 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (uid: string) => {
-    const ref = doc(db, "profiles", uid);
-    const snap = await getDoc(ref);
+    const snap = await get(ref(rtdb, `profiles/${uid}`));
     if (snap.exists()) {
-      return { id: snap.id, ...snap.data() } as Profile;
+      return { id: uid, ...snap.val() } as Profile;
     }
     return null;
   }, []);
@@ -64,14 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
-        // Try to fetch profile; if missing, create one
         let p = await fetchProfile(fbUser.uid);
+
+        // If profile doesn't exist, create one
         if (!p) {
           const displayName =
             fbUser.displayName ||
             (fbUser.email ? fbUser.email.split("@")[0] : "user");
           const username = generateUsername(displayName);
-          const newProfile: Omit<Profile, "id"> = {
+          const newProfile = {
             username,
             name: displayName,
             avatar_url: fbUser.photoURL || null,
@@ -81,12 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             followers_count: 0,
             following_count: 0,
             posts_count: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
           };
-          await setDoc(doc(db, "profiles", fbUser.uid), newProfile);
+          await set(ref(rtdb, `profiles/${fbUser.uid}`), newProfile);
           p = { id: fbUser.uid, ...newProfile } as Profile;
         }
+
         if (mounted) setProfile(p);
       } else {
         if (mounted) setProfile(null);
