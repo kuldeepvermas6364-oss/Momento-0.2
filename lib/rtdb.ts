@@ -11,10 +11,7 @@ import {
   query,
   orderByChild,
   limitToLast,
-  startAt,
   off,
-  serverTimestamp,
-  runTransaction,
 } from "firebase/database";
 import { rtdb } from "@/lib/firebase/client";
 import type { Profile } from "@/types/user";
@@ -28,7 +25,7 @@ import type { Post, Comment } from "@/types/post";
 export async function getProfile(userId: string): Promise<Profile | null> {
   const snap = await get(ref(rtdb, `profiles/${userId}`));
   if (snap.exists()) {
-    return { id: userId, ...snap.val() };
+    return { id: userId, ...snap.val() } as Profile;
   }
   return null;
 }
@@ -42,18 +39,15 @@ export async function updateProfile(
   userId: string,
   updates: Partial<Pick<Profile, "name" | "username" | "bio" | "avatar_url" | "website">>
 ): Promise<void> {
+  const now = new Date().toISOString();
   await update(ref(rtdb, `profiles/${userId}`), {
     ...updates,
-    updated_at: serverTimestamp(),
+    updated_at: now,
   });
 }
 
 export async function createProfile(userId: string, data: Omit<Profile, "id">): Promise<void> {
-  await set(ref(rtdb, `profiles/${userId}`), {
-    ...data,
-    created_at: serverTimestamp(),
-    updated_at: serverTimestamp(),
-  });
+  await set(ref(rtdb, `profiles/${userId}`), data);
 }
 
 export async function searchUsers(searchTerm: string): Promise<Profile[]> {
@@ -87,18 +81,17 @@ export async function toggleFollow(
 
   if (snap.exists()) {
     await remove(followRef);
-    await update(ref(rtdb, `profiles/${followerId}`), {
-      following_count: (await get(ref(rtdb, `profiles/${followerId}/following_count`))).val() - 1,
-    });
-    await update(ref(rtdb, `profiles/${followingId}`), {
-      followers_count: (await get(ref(rtdb, `profiles/${followingId}/followers_count`))).val() - 1,
-    });
+    const followerFollowing = (await get(ref(rtdb, `profiles/${followerId}/following_count`))).val() || 0;
+    const followingFollowers = (await get(ref(rtdb, `profiles/${followingId}/followers_count`))).val() || 0;
+    await update(ref(rtdb, `profiles/${followerId}`), { following_count: Math.max(0, followerFollowing - 1) });
+    await update(ref(rtdb, `profiles/${followingId}`), { followers_count: Math.max(0, followingFollowers - 1) });
     return { following: false };
   } else {
+    const now = new Date().toISOString();
     await set(followRef, {
       follower_id: followerId,
       following_id: followingId,
-      created_at: serverTimestamp(),
+      created_at: now,
     });
     const followerFollowing = (await get(ref(rtdb, `profiles/${followerId}/following_count`))).val() || 0;
     const followingFollowers = (await get(ref(rtdb, `profiles/${followingId}/followers_count`))).val() || 0;
@@ -128,26 +121,23 @@ export async function createPost(
   const postsRef = ref(rtdb, "posts");
   const newPostRef = push(postsRef);
   const postId = newPostRef.key!;
+  const now = new Date().toISOString();
 
-  const postData = {
+  await set(newPostRef, {
     author_id: authorId,
     caption,
     image_url: imageUrl || null,
     video_url: videoUrl || null,
     likes_count: 0,
     comments_count: 0,
-    created_at: serverTimestamp(),
-    updated_at: serverTimestamp(),
-  };
-
-  await set(newPostRef, postData);
-
-  // Also add to userPosts index
-  await set(ref(rtdb, `userPosts/${authorId}/${postId}`), {
-    created_at: serverTimestamp(),
+    created_at: now,
+    updated_at: now,
   });
 
-  // Increment posts_count on profile
+  await set(ref(rtdb, `userPosts/${authorId}/${postId}`), {
+    created_at: now,
+  });
+
   const profileSnap = await get(ref(rtdb, `profiles/${authorId}/posts_count`));
   const currentCount = profileSnap.val() || 0;
   await update(ref(rtdb, `profiles/${authorId}`), { posts_count: currentCount + 1 });
@@ -159,34 +149,19 @@ export async function getPosts(
   lastCreatedAt?: number,
   currentUserId?: string
 ): Promise<{ posts: Post[]; hasMore: boolean }> {
-  let postsQuery;
-  if (lastCreatedAt) {
-    postsQuery = query(
-      ref(rtdb, "posts"),
-      orderByChild("created_at"),
-      limitToLast(POSTS_PER_PAGE)
-    );
-  } else {
-    postsQuery = query(
-      ref(rtdb, "posts"),
-      orderByChild("created_at"),
-      limitToLast(POSTS_PER_PAGE)
-    );
-  }
+  const postsQuery = query(
+    ref(rtdb, "posts"),
+    orderByChild("created_at"),
+    limitToLast(POSTS_PER_PAGE)
+  );
 
   const snap = await get(postsQuery);
-  const posts: Post[] = [];
+  const allPosts: Array<{ id: string; author_id: string; caption: string; image_url: string | null; video_url: string | null; likes_count: number; comments_count: number; created_at: string }> = [];
 
   if (!snap.exists()) {
     return { posts: [], hasMore: false };
   }
 
-  const allPosts: Post[] = [];
-  for (const child of snap.forEach ? [] : []) {
-    // forEach on DataSnapshot
-  }
-
-  // Use snapshot.forEach properly
   snap.forEach((child) => {
     const data = child.val();
     allPosts.push({
@@ -197,17 +172,25 @@ export async function getPosts(
       video_url: data.video_url,
       likes_count: data.likes_count || 0,
       comments_count: data.comments_count || 0,
-      created_at: data.created_at,
+      created_at: data.created_at || new Date().toISOString(),
     });
   });
 
-  // Sort descending by created_at and paginate
-  allPosts.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+  allPosts.sort((a, b) => {
+    const aTime = typeof a.created_at === "string" ? new Date(a.created_at).getTime() : 0;
+    const bTime = typeof b.created_at === "string" ? new Date(b.created_at).getTime() : 0;
+    return bTime - aTime;
+  });
+
   const filtered = lastCreatedAt
-    ? allPosts.filter((p) => (p.created_at || 0) < lastCreatedAt)
+    ? allPosts.filter((p) => {
+        const pTime = typeof p.created_at === "string" ? new Date(p.created_at).getTime() : 0;
+        return pTime < lastCreatedAt;
+      })
     : allPosts;
   const page = filtered.slice(0, POSTS_PER_PAGE);
 
+  const posts: Post[] = [];
   for (const postData of page) {
     const author = await getProfile(postData.author_id);
     const liked = currentUserId ? await hasUserLiked(postData.id, currentUserId) : false;
@@ -223,9 +206,7 @@ export async function getPosts(
       video: postData.video_url || undefined,
       likes: postData.likes_count,
       comments: postData.comments_count,
-      createdAt: postData.created_at
-        ? new Date(postData.created_at).toISOString()
-        : new Date().toISOString(),
+      createdAt: typeof postData.created_at === "string" ? postData.created_at : new Date().toISOString(),
       liked,
       saved,
     });
@@ -265,9 +246,7 @@ export async function getUserPosts(
       video: data.video_url || undefined,
       likes: data.likes_count || 0,
       comments: data.comments_count || 0,
-      createdAt: data.created_at
-        ? new Date(data.created_at).toISOString()
-        : new Date().toISOString(),
+      createdAt: typeof data.created_at === "string" ? data.created_at : new Date().toISOString(),
       liked,
       saved: false,
     });
@@ -278,21 +257,15 @@ export async function getUserPosts(
 }
 
 export async function deletePost(postId: string, authorId: string): Promise<void> {
-  // Delete likes
   const likesSnap = await get(ref(rtdb, `posts/${postId}/likes`));
   if (likesSnap.exists()) await remove(ref(rtdb, `posts/${postId}/likes`));
 
-  // Delete comments
   const commentsSnap = await get(ref(rtdb, `posts/${postId}/comments`));
   if (commentsSnap.exists()) await remove(ref(rtdb, `posts/${postId}/comments`));
 
-  // Delete the post
   await remove(ref(rtdb, `posts/${postId}`));
-
-  // Delete from userPosts index
   await remove(ref(rtdb, `userPosts/${authorId}/${postId}`));
 
-  // Decrement posts_count
   const countSnap = await get(ref(rtdb, `profiles/${authorId}/posts_count`));
   const count = countSnap.val() || 0;
   await update(ref(rtdb, `profiles/${authorId}`), { posts_count: Math.max(0, count - 1) });
@@ -317,7 +290,8 @@ export async function toggleLike(
     });
     return { liked: false };
   } else {
-    await set(likeRef, { created_at: serverTimestamp() });
+    const now = new Date().toISOString();
+    await set(likeRef, { created_at: now });
     const countSnap = await get(ref(rtdb, `posts/${postId}/likes_count`));
     await update(ref(rtdb, `posts/${postId}`), {
       likes_count: (countSnap.val() || 0) + 1,
@@ -347,10 +321,11 @@ export async function toggleSave(
     await remove(saveRef);
     return { saved: false };
   } else {
+    const now = new Date().toISOString();
     await set(saveRef, {
       post_id: postId,
       user_id: userId,
-      created_at: serverTimestamp(),
+      created_at: now,
     });
     return { saved: true };
   }
@@ -391,9 +366,7 @@ export async function getSavedPosts(userId: string): Promise<Post[]> {
       video: data.video_url || undefined,
       likes: data.likes_count || 0,
       comments: data.comments_count || 0,
-      createdAt: data.created_at
-        ? new Date(data.created_at).toISOString()
-        : "",
+      createdAt: typeof data.created_at === "string" ? data.created_at : "",
       liked: false,
       saved: true,
     });
@@ -414,13 +387,13 @@ export async function addComment(
 ): Promise<string> {
   const commentsRef = ref(rtdb, `posts/${postId}/comments`);
   const newCommentRef = push(commentsRef);
+  const now = new Date().toISOString();
   await set(newCommentRef, {
     author_id: authorId,
     text,
-    created_at: serverTimestamp(),
+    created_at: now,
   });
 
-  // Increment comments_count
   const countSnap = await get(ref(rtdb, `posts/${postId}/comments_count`));
   await update(ref(rtdb, `posts/${postId}`), {
     comments_count: (countSnap.val() || 0) + 1,
@@ -434,9 +407,6 @@ export async function getComments(postId: string): Promise<Comment[]> {
   if (!snap.exists()) return [];
 
   const comments: Comment[] = [];
-  for (const child of []) {
-    // placeholder
-  }
 
   snap.forEach((child) => {
     const data = child.val();
@@ -451,13 +421,10 @@ export async function getComments(postId: string): Promise<Comment[]> {
         verified: false,
       },
       text: data.text || "",
-      createdAt: data.created_at
-        ? new Date(data.created_at).toISOString()
-        : "",
+      createdAt: typeof data.created_at === "string" ? data.created_at : "",
     });
   });
 
-  // Fetch author profiles
   for (const comment of comments) {
     const author = await getProfile(comment.author.id);
     if (author) {
@@ -478,8 +445,44 @@ export async function deleteComment(postId: string, commentId: string): Promise<
 }
 
 // ============================================================
-// REALTIME LISTENERS
+// REALTIME MESSAGING
 // ============================================================
+
+export async function sendMessage(
+  conversationId: string,
+  senderId: string,
+  text: string
+): Promise<string> {
+  const messagesRef = ref(rtdb, `conversations/${conversationId}/messages`);
+  const newMessage = push(messagesRef);
+  const now = new Date().toISOString();
+  await set(newMessage, {
+    senderId,
+    text,
+    imageUrl: null,
+    read: false,
+    createdAt: now,
+  });
+  return newMessage.key!;
+}
+
+export async function sendImageMessage(
+  conversationId: string,
+  senderId: string,
+  imageUrl: string
+): Promise<string> {
+  const messagesRef = ref(rtdb, `conversations/${conversationId}/messages`);
+  const newMessage = push(messagesRef);
+  const now = new Date().toISOString();
+  await set(newMessage, {
+    senderId,
+    text: "",
+    imageUrl,
+    read: false,
+    createdAt: now,
+  });
+  return newMessage.key!;
+}
 
 export function listenToMessages(
   conversationId: string,
@@ -501,40 +504,6 @@ export function listenToMessages(
   });
 
   return () => off(messagesRef);
-}
-
-export async function sendMessage(
-  conversationId: string,
-  senderId: string,
-  text: string
-): Promise<string> {
-  const messagesRef = ref(rtdb, `conversations/${conversationId}/messages`);
-  const newMessage = push(messagesRef);
-  await set(newMessage, {
-    senderId,
-    text,
-    imageUrl: null,
-    read: false,
-    createdAt: serverTimestamp(),
-  });
-  return newMessage.key!;
-}
-
-export async function sendImageMessage(
-  conversationId: string,
-  senderId: string,
-  imageUrl: string
-): Promise<string> {
-  const messagesRef = ref(rtdb, `conversations/${conversationId}/messages`);
-  const newMessage = push(messagesRef);
-  await set(newMessage, {
-    senderId,
-    text: "",
-    imageUrl,
-    read: false,
-    createdAt: serverTimestamp(),
-  });
-  return newMessage.key!;
 }
 
 export async function markMessagesRead(
@@ -568,18 +537,19 @@ export async function getOrCreateConversation(
   const snap = await get(convoRef);
 
   if (!snap.exists()) {
+    const now = new Date().toISOString();
     const updates: Record<string, unknown> = {};
     updates[`userConversations/${userIdA}/${conversationId}`] = {
       otherUserId: userIdB,
       otherUserName: nameB,
       lastMessage: "",
-      lastMessageAt: serverTimestamp(),
+      lastMessageAt: now,
     };
     updates[`userConversations/${userIdB}/${conversationId}`] = {
       otherUserId: userIdA,
       otherUserName: nameA,
       lastMessage: "",
-      lastMessageAt: serverTimestamp(),
+      lastMessageAt: now,
     };
     await update(ref(rtdb), updates);
   }
@@ -614,7 +584,7 @@ export type RTMessage = {
   text: string;
   imageUrl: string | null;
   read: boolean;
-  createdAt: number;
+  createdAt: string;
 };
 
 export type RTConversation = {
@@ -622,5 +592,5 @@ export type RTConversation = {
   otherUserId: string;
   otherUserName: string;
   lastMessage: string;
-  lastMessageAt: number;
+  lastMessageAt: string;
 };
