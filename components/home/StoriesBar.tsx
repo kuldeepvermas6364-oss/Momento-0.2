@@ -1,41 +1,7 @@
-export default function StoriesBar() {
-  const stories = [
-    "You",
-    "Alex",
-    "Emma",
-    "John",
-    "Sophia"
-  ];
+"use client";
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        gap: "16px",
-        overflowX: "auto",
-        padding: "16px 0",
-      }}
-    >
-      {stories.map((story) => (
-        <div
-          key={story}
-          style={{
-            minWidth: "70px",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "50%",
-              background: "#6366F1",
-              margin: "0 auto 8px",
-            }}
-          />
-          <small>{story}</small>
-        </div>
-      ))}
-    </div>
-  );
+export default function StoriesBar() {
+  // Phase 3 will implement real stories with Firestore + Cloudinary
+  // For now, this is a placeholder that does not render mock data
+  return null;
 }
