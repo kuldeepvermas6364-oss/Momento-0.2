@@ -7,17 +7,21 @@ import SignupForm from "@/components/auth/SignupForm";
 export default function SignupPage() {
   return (
     <AuthLayout>
-      <AppName />
+      <div style={{ textAlign: "center" }}>
+        <AppName />
+      </div>
 
-      <div style={{ height: 24 }} />
+      <div style={{ height: 32 }} />
 
       <AuthCard>
-        <AuthHeader
-          title="Create Account"
-          subtitle="Join Momento today"
-        />
+        <div className="animate-fade-in-up-delay-1">
+          <AuthHeader
+            title="Create Account"
+            subtitle="Join Momento today"
+          />
+        </div>
 
-        <div style={{ height: 24 }} />
+        <div style={{ height: 28 }} />
 
         <SignupForm />
       </AuthCard>
