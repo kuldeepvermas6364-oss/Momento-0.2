@@ -1,62 +1,123 @@
-import PostCard from "./PostCard";
-import type { Post } from "@/types/post";
+"use client";
 
-const samplePosts: Post[] = [
-  {
-    id: "1",
-    author: {
-      id: "u1",
-      username: "momento",
-      name: "Momento",
-      avatar: "",
-      verified: true
-    },
-    caption: "🎉 Welcome to Momento! Your social journey starts here.",
-    likes: 0,
-    comments: 0,
-    createdAt: "2026-08-03T10:00:00Z"
-  },
-  {
-    id: "2",
-    author: {
-      id: "u2",
-      username: "kuldeep",
-      name: "Kuldeep Verma",
-      avatar: "",
-      verified: false
-    },
-    caption: "🚀 Building Momento from scratch with Next.js.",
-    likes: 0,
-    comments: 0,
-    createdAt: "2026-08-03T09:00:00Z"
-  },
-  {
-    id: "3",
-    author: {
-      id: "u3",
-      username: "ai",
-      name: "AI Bot",
-      avatar: "",
-      verified: true
-    },
-    caption: "🤖 AI-powered social platform is coming soon.",
-    likes: 0,
-    comments: 0,
-    createdAt: "2026-08-03T08:00:00Z"
-  }
-];
+import { useState, useEffect, useCallback } from "react";
+import type { Post } from "@/types/post";
+import { getPosts } from "@/lib/posts";
+import { useAuthContext } from "@/context/AuthContext";
+import PostCard from "./PostCard";
+import EmptyFeed from "./EmptyFeed";
 
 export default function HomeFeed() {
+  const { user } = useAuthContext();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPosts = useCallback(
+    async (lastCreatedAt?: number) => {
+      if (lastCreatedAt) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      try {
+        const result = await getPosts(lastCreatedAt, user?.id);
+
+        if (lastCreatedAt) {
+          setPosts((prev) => [...prev, ...result.posts]);
+        } else {
+          setPosts(result.posts);
+        }
+        setHasMore(result.hasMore);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load posts"
+        );
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [user?.id]
+  );
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  function handleLoadMore() {
+    if (!hasMore || loadingMore || posts.length === 0) return;
+    const lastPost = posts[posts.length - 1];
+    const lastTime = new Date(lastPost.createdAt).getTime();
+    fetchPosts(lastTime);
+  }
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px" }}>
+        <p style={{ color: "#6B7280", fontSize: "15px" }}>Loading posts...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px" }}>
+        <p style={{ color: "#EF4444", fontSize: "14px", marginBottom: "12px" }}>
+          {error}
+        </p>
+        <button
+          onClick={() => fetchPosts()}
+          style={{
+            padding: "8px 16px",
+            border: "1px solid #6366F1",
+            borderRadius: "8px",
+            background: "none",
+            color: "#6366F1",
+            fontSize: "13px",
+            cursor: "pointer",
+          }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return <EmptyFeed />;
+  }
+
   return (
-    <section style={{ padding: "24px" }}>
-      {samplePosts.map((post) => (
-        <PostCard
-          key={post.id}
-          username={post.author.username}
-          caption={post.caption}
-          createdAt={new Date(post.createdAt)}
-        />
+    <div>
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} />
       ))}
-    </section>
+
+      {hasMore && (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            style={{
+              padding: "10px 24px",
+              border: "1px solid #6366F1",
+              borderRadius: "8px",
+              background: "none",
+              color: "#6366F1",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: loadingMore ? "wait" : "pointer",
+            }}
+          >
+            {loadingMore ? "Loading..." : "Load More"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
