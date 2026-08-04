@@ -58,42 +58,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (!mounted) return;
-      setFirebaseUser(fbUser);
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (fbUser: FirebaseUser | null) => {
+        if (!mounted) return;
+        setFirebaseUser(fbUser);
 
-      if (fbUser) {
-        let p = await fetchProfile(fbUser.uid);
+        if (fbUser) {
+          let p = await fetchProfile(fbUser.uid);
 
-        if (!p) {
-          const displayName =
-            fbUser.displayName ||
-            (fbUser.email ? fbUser.email.split("@")[0] : "user");
-          const username = generateUsername(displayName);
-          const now = new Date().toISOString();
-          const newProfile = {
-            username,
-            name: displayName,
-            avatar_url: fbUser.photoURL || null,
-            bio: null,
-            verified: false,
-            website: null,
-            followers_count: 0,
-            following_count: 0,
-            posts_count: 0,
-            created_at: now,
-            updated_at: now,
-          };
-          await set(ref(rtdb, `profiles/${fbUser.uid}`), newProfile);
-          p = { id: fbUser.uid, ...newProfile } as Profile;
+          if (!p) {
+            const displayName =
+              fbUser.displayName ||
+              (fbUser.email ? fbUser.email.split("@")[0] : "user");
+            const username = generateUsername(displayName);
+            const now = new Date().toISOString();
+            const newProfile = {
+              username,
+              name: displayName,
+              avatar_url: fbUser.photoURL || null,
+              bio: null,
+              verified: false,
+              website: null,
+              followers_count: 0,
+              following_count: 0,
+              posts_count: 0,
+              created_at: now,
+              updated_at: now,
+            };
+            await set(ref(rtdb, `profiles/${fbUser.uid}`), newProfile);
+            p = { id: fbUser.uid, ...newProfile } as Profile;
+          }
+
+          if (mounted) setProfile(p);
+        } else {
+          if (mounted) setProfile(null);
         }
-
-        if (mounted) setProfile(p);
-      } else {
-        if (mounted) setProfile(null);
+        if (mounted) setLoading(false);
       }
-      if (mounted) setLoading(false);
-    });
+    );
 
     return () => {
       mounted = false;
